@@ -9,11 +9,20 @@ from database import BeamDatabase
 class Bank:
     TABLE_NAME = "bank"
 
-    def __init__(self, db: AsyncDatabase):
+    def __init__(self, db: AsyncDatabase) -> None:
+        """Initializes an async instance of the BeamDatabase class
+        
+        Args:
+            db (AsyncDatabase): Pymongo AsyncDatabase instance
+        """
         self._conn = db # connection to the database instance
     
     # create table if not exists
     async def create_table(self):
+        """
+        Creates a 'bank' collection if one does not exists and then creates
+        a discord_id index
+        """
         tables = await self._conn.list_collection_names()
         if Bank.TABLE_NAME not in tables:
             print("Creating 'bank' table")
@@ -23,6 +32,12 @@ class Bank:
 
     
     async def add_account(self, discord_member: Dict[str, Any]):
+        """
+        Adds a user to the bank collection
+
+        Args:
+            discord_member (Dict[str, Any]): Document object to be added to the collection
+        """
         collection = self._conn[Bank.TABLE_NAME]
         await collection.update_one(
             {"discord_id": discord_member["discord_id"]},
@@ -33,12 +48,30 @@ class Bank:
             upsert=True)
 
     async def get_balance(self, discord_id: str) -> str | None:
+        """
+        Returns the current balance of a user
+
+        Args:
+            discord_id (str): Discord_id of the user
+        
+        Returns:
+            str | None: the current balance of the user
+        """
         # find the user by discord_id
         user = await self._conn[Bank.TABLE_NAME].find_one({"discord_id": discord_id})
+        
         # return the user's balance
         return user["currency"] if user else None
 
     async def update_balance(self, discord_id: str, amount: int, op: str):
+        """
+        Adds or subtracts the amount from the current balance
+
+        Args:
+            discord_id (str): Discord_id of the user 
+            amount     (int): The amount to add or subtract
+            op         (str): Addition or subtraction operator
+        """
         balance_str = await self.get_balance(discord_id)
         
         if balance_str is None:
@@ -56,21 +89,4 @@ class Bank:
             {"discord_id": discord_id},
             {"$set": {"currency": str(new_balance)}}
         )
-        
-
-bdb = BeamDatabase("BeamDB")
-bank = Bank(bdb.db)
-
-async def main():
-    account = {
-        "discord_id": "837465013",
-        "username": "datkiddude",
-        "currency": "1000",
-        "created_at": datetime.now(tz=timezone.utc).replace(microsecond=0),
-    }
-    # await bank.add_account(account)
-    # currency = await bank.get_balance(account["discord_id"])
-    await bank.update_balance(account["discord_id"], amount=200, op="+")
-  
-asyncio.run(main())
 
