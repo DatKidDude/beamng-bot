@@ -47,7 +47,7 @@ class Bank:
                       }},
             upsert=True)
 
-    async def get_balance(self, discord_id: str) -> str | None:
+    async def get_balance(self, discord_id: str) -> str:
         """
         Returns the current balance of a user
 
@@ -55,13 +55,18 @@ class Bank:
             discord_id (str): Discord_id of the user
         
         Returns:
-            str | None: the current balance of the user
-        """
-        # find the user by discord_id
-        user = await self._conn[Bank.TABLE_NAME].find_one({"discord_id": discord_id})
+            str: The current balance of the user
         
-        # return the user's balance
-        return user["currency"] if user else None
+        Raises:
+            ValueError: Raises if user evaluates to None
+        """
+        
+        user: Dict[str, Any] | None = await self._conn[Bank.TABLE_NAME].find_one({"discord_id": discord_id})
+        
+        if user is None:
+            raise ValueError(f"NoneType returned in {self.get_balance.__name__}")
+    
+        return user["currency"]
 
     async def update_balance(self, discord_id: str, amount: int, op: str):
         """
@@ -71,11 +76,11 @@ class Bank:
             discord_id (str): Discord_id of the user 
             amount     (int): The amount to add or subtract
             op         (str): Addition or subtraction operator
+        
+        Raises:
+            ValueError: Raised if op is not '+' or '-'
         """
         balance_str = await self.get_balance(discord_id)
-        
-        if balance_str is None:
-            raise ValueError("NoneType returned from get_balance()")
         
         new_balance = int(balance_str)
         if op == "+":
