@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 from pymongo.asynchronous.database import AsyncDatabase
 from pymongo.typings import _DocumentType
 from typing import Any, Dict
-from database import BeamDatabase
 
 class Bank:
     TABLE_NAME = "bank"

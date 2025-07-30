@@ -1,40 +1,24 @@
 import discord
-from typing import Any
-import os, sys
+import sys
 from discord.ext import commands
-from dataclasses import dataclass
-from dotenv import load_dotenv, find_dotenv
+from modules import Database
+from config import Auth
 
-try:
-    load_dotenv(find_dotenv(raise_error_if_not_found=True))
-except OSError as e:
-    print("Could not find .env file. Shutting down bot...")
-
-
-@dataclass(frozen=True)
-class Auth:
-    DISCORD_TOKEN: str = os.getenv("DISCORD_TOKEN", "")
-    DB_NAME: str = os.getenv("DB_NAME", "BeamDB")
-    COMMAND_PREFIX: str = "!"
-
-
-class EconomyBot(commands.Bot):
-    def __init__(self):
-        super().__init__(command_prefix=Auth.COMMAND_PREFIX, 
-                         intents=discord.Intents.all())
+class EconomyBot(commands.Bot, commands.Cog):
+    def __init__(self, auth: Auth, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        self.auth = auth
+        self.db = Database(db_name=self.auth.DB_NAME)
 
     async def on_ready(self):
         print("Discord bot connected")
     
     def run(self, *args, **kwargs):
         try:
-            super().run(token=Auth.DISCORD_TOKEN, *args, **kwargs)
+            super().run(token=self.auth.DISCORD_TOKEN, *args, **kwargs)
         except (discord.LoginFailure, KeyboardInterrupt) as e:
             print(f"Error occured: {e}\nExiting...")
             sys.exit()
-    
-
-bot = EconomyBot()
-bot.run()
 
 
