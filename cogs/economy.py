@@ -9,7 +9,19 @@ class Economy(commands.Cog):
         self.bot = bot
         self.bank = self.bot.db.bank
     
-    async def cog_check(self, ctx: commands.Context):
+    async def cog_check(self, ctx: commands.Context) -> bool:
+        """Run a boolean check on every command inside the class. If True is 
+        returned the command is ran
+        
+        Args:
+            ctx (commands.Context): Invocation context meta data
+        
+        Returns:
+            bool: If True the command is ran else raises Exception
+        
+        Raises:
+            MustBeRegistered (commands.CheckFailure): Runs if user is not stored in the database
+        """
         # Allow the !join command to bypass registration check
         if ctx.command and ctx.command.qualified_name == "join": 
             return True
@@ -21,13 +33,27 @@ class Economy(commands.Cog):
         return True
     
     async def cog_command_error(self, ctx: commands.Context, error: Exception) -> None:
+        """Called whenever an error is dispatched inside the Economy Cog
+        
+        Args:       
+            ctx (commands.Context): Invocation context meta data
+            error (Exception): Any Exception raised while running a command
+        """
         if isinstance(error, MustBeRegistered):
             await ctx.send(str(error))
         else:
             print(error)
     
     @commands.command()
-    async def join(self, ctx):
+    async def join(self, ctx) -> None:
+        """Adds user to the database
+        
+        Args:
+            ctx (commands.Context): Invocation context meta data
+        
+        Raises:
+            Exception: catches any exception 
+        """
         user = ctx.author
         user_id = str(user.id)
         account = {
@@ -35,6 +61,11 @@ class Economy(commands.Cog):
             "username": user.name,
             "currency": 1000
         }
+
+        if await self.bank.check_user_exists(user_id):
+            await ctx.send(f"{user.mention} has already joined")
+            return
+
         try:
             await self.bank.add_account(discord_member=account)
         except Exception as e:
