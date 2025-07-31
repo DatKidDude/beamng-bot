@@ -42,10 +42,20 @@ class Bank:
             {"discord_id": discord_member["discord_id"]},
             {"$set": {"username": discord_member["username"],
                       "currency": discord_member["currency"],
-                      "created_at": datetime.now(tz=timezone.utc)
+                      "created_at": datetime.now(tz=timezone.utc),
+                      "daily_cd": None,
+                      "weekly_cd": None
                       }},
             upsert=True)
         return result
+    
+    async def get_account(self, discord_id: str):
+        user: Dict[str, Any] | None = await self._conn[Bank.TABLE_NAME].find_one({"discord_id": discord_id})
+
+        if user is None:
+            raise ValueError(f"NoneType returned in {self.get_account.__name__}")
+        
+        return user
     
     async def get_balance(self, discord_id: str) -> str:
         """
