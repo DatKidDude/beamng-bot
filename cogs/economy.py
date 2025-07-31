@@ -14,9 +14,6 @@ class Economy(commands.Cog):
         """Run a boolean check on every command inside the class. If True is 
         returned the command is ran
         
-        Args:
-            ctx (commands.Context): Invocation context meta data
-        
         Returns:
             bool: If True the command is ran else raises Exception
         
@@ -34,12 +31,7 @@ class Economy(commands.Cog):
         return True
     
     async def cog_command_error(self, ctx: commands.Context, error: Exception) -> None:
-        """Called whenever an error is dispatched inside the Economy Cog
-        
-        Args:       
-            ctx (commands.Context): Invocation context meta data
-            error (Exception): Any Exception raised while running a command
-        """
+        """Called whenever an error is dispatched inside the Economy Cog"""
         if isinstance(error, commands.CommandInvokeError):
             print(error.original)
 
@@ -83,11 +75,7 @@ class Economy(commands.Cog):
 
     @commands.command()
     async def work(self, ctx) -> None:
-        """Daily command for a user to earn currency
-        
-        Args:
-            ctx (commands.Context): Invocation context meta data
-        """
+        """Daily command for a user to earn currency"""
         user = ctx.author
         user_id = str(ctx.author.id)
 
