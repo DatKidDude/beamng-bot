@@ -38,14 +38,15 @@ class Bank:
             discord_member (Dict[str, Any]): Document object to be added to the collection
         """
         collection = self._conn[Bank.TABLE_NAME]
-        await collection.update_one(
+        result = await collection.update_one(
             {"discord_id": discord_member["discord_id"]},
             {"$set": {"username": discord_member["username"],
                       "currency": discord_member["currency"],
-                      "created_at": discord_member["created_at"]
+                      "created_at": datetime.now(tz=timezone.utc)
                       }},
             upsert=True)
-
+        return result
+    
     async def get_balance(self, discord_id: str) -> str:
         """
         Returns the current balance of a user
@@ -93,4 +94,10 @@ class Bank:
             {"discord_id": discord_id},
             {"$set": {"currency": str(new_balance)}}
         )
+    
+    async def check_user_exists(self, discord_id: str) -> bool:
+        """Verifies if a user exists in the database by their discord id"""
+        user = await self._conn[Bank.TABLE_NAME].find_one({"discord_id": discord_id})
+        return True if user else False
+        
 
