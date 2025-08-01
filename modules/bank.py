@@ -1,6 +1,6 @@
 import pymongo
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pymongo.asynchronous.database import AsyncDatabase
 from pymongo.typings import _DocumentType
 from typing import Any, Dict, Optional
@@ -28,8 +28,7 @@ class Bank:
             table = await self._conn.create_collection(Bank.TABLE_NAME) # create the table
             print("Creating index")
             await table.create_index([("discord_id")], unique=True) # create index in ascending order
-
-    
+  
     async def add_account(self, discord_member: Dict[str, Any]):
         """
         Adds a user to the bank collection
@@ -78,7 +77,7 @@ class Bank:
     
         return user["currency"]
 
-    async def update_balance(self, discord_id: str, amount: int, cooldown_field: Optional[str] = None, cooldown_time: Optional[str] = None) -> int:
+    async def update_balance(self, discord_id: str, amount: int, cooldown_field: Optional[str] = None, cooldown_time: Optional[datetime] = None) -> int:
         """
         Adds or subtracts the amount from the current balance.
         If cooldown_date is passed that means the user was able to use
@@ -102,7 +101,6 @@ class Bank:
         
         return await self.get_balance(discord_id=discord_id)
         
-
     async def check_user_exists(self, discord_id: str) -> bool:
         """Verifies if a user exists in the database by their discord id"""
         user = await self._conn[Bank.TABLE_NAME].find_one({"discord_id": discord_id})

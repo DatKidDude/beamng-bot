@@ -7,7 +7,7 @@ class BeamDatabase:
     
     def __init__(self, db_name: str) -> None:
         self.db_name = db_name
-        self._conn = AsyncMongoClient()
+        self._conn = AsyncMongoClient(tz_aware=True)
     
     @property
     def db(self) -> AsyncDatabase:
