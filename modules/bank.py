@@ -3,7 +3,7 @@ import asyncio
 from datetime import datetime, timezone
 from pymongo.asynchronous.database import AsyncDatabase
 from pymongo.typings import _DocumentType
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 class Bank:
     TABLE_NAME = "bank"
@@ -50,14 +50,14 @@ class Bank:
         return result
     
     async def get_account(self, discord_id: str):
-        user: Dict[str, Any] | None = await self._conn[Bank.TABLE_NAME].find_one({"discord_id": discord_id})
+        user: Optional[Dict[str, Any]] = await self._conn[Bank.TABLE_NAME].find_one({"discord_id": discord_id})
 
         if user is None:
             raise ValueError(f"NoneType returned in {self.get_account.__name__}")
         
         return user
     
-    async def get_balance(self, discord_id: str) -> str:
+    async def get_balance(self, discord_id: str) -> int:
         """
         Returns the current balance of a user
 
@@ -71,40 +71,38 @@ class Bank:
             ValueError: Raises if user evaluates to None
         """
         
-        user: Dict[str, Any] | None = await self._conn[Bank.TABLE_NAME].find_one({"discord_id": discord_id})
+        user: Optional[Dict[str, Any]] = await self._conn[Bank.TABLE_NAME].find_one({"discord_id": discord_id})
         
         if user is None:
             raise ValueError(f"NoneType returned in {self.get_balance.__name__}")
     
         return user["currency"]
 
-    async def update_balance(self, discord_id: str, amount: int, op: str):
+    async def update_balance(self, discord_id: str, amount: int, cooldown_field: Optional[str] = None, cooldown_time: Optional[str] = None) -> int:
         """
-        Adds or subtracts the amount from the current balance
+        Adds or subtracts the amount from the current balance.
+        If cooldown_date is passed that means the user was able to use
+        the daily or weekly command.
 
         Args:
             discord_id (str): Discord_id of the user 
             amount     (int): The amount to add or subtract
-            op         (str): Addition or subtraction operator
-        
-        Raises:
-            ValueError: Raised if op is not '+' or '-'
+            cooldown_date (datetime): The next time the user can use the daily or weekly command
         """
-        balance_str = await self.get_balance(discord_id)
-        
-        new_balance = int(balance_str)
-        if op == "+":
-            new_balance += amount
-        elif op == "-":
-            new_balance -= amount
-        else:
-            raise ValueError("Invalid Operation")
+        set_update: Dict[str, Any] = {"$inc": {"currency": amount}}
+
+        # updates the daily or weekly cooldown time
+        if cooldown_field and cooldown_time:
+            set_update.setdefault("$set", {})[cooldown_field] = cooldown_time
         
         await self._conn[Bank.TABLE_NAME].update_one(
             {"discord_id": discord_id},
-            {"$set": {"currency": str(new_balance)}}
-        )
-    
+            update=set_update
+            )
+        
+        return await self.get_balance(discord_id=discord_id)
+        
+
     async def check_user_exists(self, discord_id: str) -> bool:
         """Verifies if a user exists in the database by their discord id"""
         user = await self._conn[Bank.TABLE_NAME].find_one({"discord_id": discord_id})
